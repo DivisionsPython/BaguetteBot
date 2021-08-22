@@ -1,3 +1,21 @@
+import discord, random, asyncio
+from aiohttp import ClientSession
+from discord.ext import commands
+from random import randint
+from discord.utils import get
+from discord import Member
+from discord.ext.commands import has_permissions, MissingPermissions
+from keep_alive import keep_alive
+import json
+import os
+import youtube_dl
+import requests
+import io
+import aiohttp
+
+filtered_words = ["Replace This","Replace this"]
+
+client = commands.Bot(command_prefix=">")
 #hello
 @client.command()
 async def hello(ctx):
@@ -55,7 +73,8 @@ async def ping(ctx):
 async def kick(ctx, member: discord.Member):
     await member.kick()
     await ctx.send("User " + member.display_name + " has been kicked")
-    #Errors
+	
+#Errors
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -64,6 +83,14 @@ async def on_command_error(ctx, error):
         await ctx.send("You dont have all the Perms :angry:")
     #if isinstance(error, discord.ext.commands.CommandInvokeError):
         #await ctx.send("I dont have all the Perms to do that :angry:")
+#automod
+@client.event
+async def on_message(msg):
+  for word in filtered_words:
+    if word in msg.content:
+      await msg.delete()
+
+  await client.process_commands(msg)
 
 #Ban
 @client.command(name="ban", pass_context=True)
@@ -150,4 +177,19 @@ async def _8ball(ctx, *, question):
 @client.command(pass_context = True)
 async def servercount(ctx):
   await ctx.send(f"I'm in {len(client.guilds)} servers!") 
+#make role
+@client.command(aliases=['make_role'])
+@commands.has_permissions(manage_roles=True) 
+async def create_role(ctx, *, name):
+	guild = ctx.guild
+	await guild.create_role(name=name)
+	await ctx.send(f'Role `{name}` has been created')
 
+  #delete role
+@client.command(name="delete_role", pass_context=True)
+async def delete_role(ctx, role_name):
+    role_object = discord.utils.get(ctx.message.guild.roles, name=role_name)
+    await role_object.delete()
+    
+keep_alive()
+client.run("Token")
